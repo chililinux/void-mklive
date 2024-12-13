@@ -72,6 +72,7 @@ declare -g MAKE_ENLIGHTENMENT=false
 declare -g MAKE_FLUXBOX=false
 declare -g MAKE_KDE=false
 declare -g MAKE_GNOME=false
+declare -g MAKE_CINNAMON_CUSTOM=false
 declare -g MAKE_FULL_X=false
 #declare -g KEEP_BUILDDIR=false
 declare -g LBIND=false
@@ -191,6 +192,11 @@ sh_choose_packages_xfce_base() {
 	print_step "Selecionando pacotes XFCE Base"
 	ADDITIONAL_PKGS+=" xfce4"
 	ADDITIONAL_PKGS+=" firefox firefox-i18n-pt-BR"
+}
+
+sh_choose_packages_cinnamon_custom() {
+	print_step "Selecionando pacotes CINNAMON Custom"
+	ADDITIONAL_PKGS+=" cinnamon-all"
 }
 
 sh_choose_packages_xfce_custom() {
@@ -933,7 +939,9 @@ set_config_distro() {
 			config-xfce-base
 			config-xfce-custom
 			config-kde-custom
-			config-gnome-custom)
+			config-gnome-custom
+			config-cinnamon-custom
+			)
 	elif $MAKE_ENLIGHTENMENT; then
 		title='Void Linux Enlightenment Custom'
 		name='enlightenment-custom'
@@ -963,6 +971,10 @@ set_config_distro() {
 		title='Void Linux Xfce Custom'
 		name='xfce-custom'
 		aname=('config-xfce-custom')
+	elif $MAKE_CINNAMON_CUSTOM; then
+		title='Void Linux Cinnamon Custom'
+		name='cinnamon-custom'
+		aname=('config-cinnamon-custom')
 	else
 		title='Void Linux Base Custom'
 		name='base-custom'
@@ -1009,6 +1021,10 @@ while getopts "a:b:r:c:C:T:Kk:l:i:I:S:s:o:p:g:v:VhXxYyQqWwNnEeFfAGP" opt; do
 	y | Y)
 		MAKE_X=true
 		MAKE_XFCE_CUSTOM=true
+		;;
+	n | N)
+		MAKE_X=true
+		MAKE_CINNAMON_CUSTOM=true
 		;;
 	w | W)
 		MAKE_X=true
@@ -1085,6 +1101,8 @@ if $MAKE_X; then
 	elif $MAKE_XFCE_CUSTOM; then
 		sh_choose_packages_xfce_base
 		sh_choose_packages_xfce_custom
+	elif $MAKE_CINNAMON_CUSTOM; then
+		sh_choose_packages_cinnamon_custom
 	fi
 fi
 
@@ -1127,9 +1145,9 @@ PACKAGE_LIST="$BASE_SYSTEM_PKG $PACKAGE_LIST"
 #ROOTDIR='/tmp'
 #mount -o remount,size=18G,mode=1777 tmpfs /dev/shm
 #ROOTDIR='/dev/shm'
-ROOTDIR="/lfs/voidlinux"
 #mount /dev/nvme0n1p2 /mnt/voidlinux
 #ROOTDIR='/mnt/voidlinux/@/lixo'
+ROOTDIR="/lfs/voidlinux"
 
 if [ -n "$ROOTDIR" ]; then
 	#	BUILDDIR=$(mktemp --tmpdir="$ROOTDIR" -d)
