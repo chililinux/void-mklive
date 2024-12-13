@@ -27,13 +27,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #-
-
 #xbps-install -U -r /tmp/fakeroot --repository=https://repo-fastly.voidlinux.org/current bash -S
+
 #export LANGUAGE=pt_BR
 export TERM=${TERM:-xterm}
 export TERM=${TERM:-xterm-256color}
 export TEXTDOMAINDIR=/usr/share/locale
-export TEXTDOMAIN=void-install
+export TEXTDOMAIN=mkiso
 # flag languages
 declare -gA Alanguage=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
 declare -gA Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
@@ -48,7 +48,7 @@ OLD_ALIASES=$(alias)
 unalias -a
 
 #debug
-#export PS4='${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
+export PS4='${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 #set -x
 #set -e
 shopt -s extglob
@@ -64,24 +64,23 @@ trap "eval \"$OLD_ALIASES\"" EXIT
 trap 'error_out $? $LINENO' INT TERM 0
 
 umask 022
-declare -gi MAKE_X=0
-declare -gi MAKE_XFCE_BASE=0
-declare -gi MAKE_XFCE_CUSTOM=0
-declare -gi MAKE_AWESOME=0
-declare -gi MAKE_ENLIGHTENMENT=0
-declare -gi MAKE_FLUXBOX=0
-declare -gi MAKE_KDE=0
-declare -gi MAKE_GNOME=0
-declare -gi MAKE_FULL_X=0
-#declare -gi KEEP_BUILDDIR=0
-declare -gi LBIND=0
-declare -gi QUIET=0
-declare -gi STEP_COUNT=27
+declare -g MAKE_X=false
+declare -g MAKE_XFCE_BASE=false
+declare -g MAKE_XFCE_CUSTOM=false
+declare -g MAKE_AWESOME=false
+declare -g MAKE_ENLIGHTENMENT=false
+declare -g MAKE_FLUXBOX=false
+declare -g MAKE_KDE=false
+declare -g MAKE_GNOME=false
+declare -g MAKE_CINNAMON_CUSTOM=false
+declare -g MAKE_FULL_X=false
+#declare -g KEEP_BUILDDIR=false
+declare -g LBIND=false
+declare -g QUIET=false
+declare -gi STEP_COUNT=72
 declare -g VOL_ID='VOID_LIVE'
 declare -g title
 declare -g name
-readonly true=1
-readonly false=0
 declare -g SQUASHFS_COMPRESSION=xz
 declare -g INITRAM_COMPRESSION=xz
 
@@ -91,21 +90,26 @@ sh_choose_packages_base() {
 	declare -g PROGNAME=$(basename "$0")
 	declare -g REQUIRED_PKGS="base-files libgcc dash coreutils sed tar gawk syslinux grub-i386-efi grub-x86_64-efi memtest86+ squashfs-tools xorriso"
 	declare -g INITRAMFS_PKGS="binutils device-mapper dhclient dracut-network openresolv"
-	declare -g ADDITIONAL_PKGS="dialog gettext curl wget git pv nano vim parted"
-	ADDITIONAL_PKGS+=" nano-syntax-highlighting"	#--repository=https://chililinux.com/void/current
-	ADDITIONAL_PKGS+=" porg"                      #--repository=https://chililinux.com/void/current
-	ADDITIONAL_PKGS+=" duf dfc"
+	declare -g ADDITIONAL_PKGS="dialog gettext curl wget git pv nano parted"
 	ADDITIONAL_PKGS+=" btop htop"
-	ADDITIONAL_PKGS+=" tree rsync lynx parallel tmate gpm evtest acpi"
-	ADDITIONAL_PKGS+=" grub-void-theme"
-	ADDITIONAL_PKGS+=" xz zstd"
-	ADDITIONAL_PKGS+=" bc geoip geoipupdate iputils lvm2 cryptsetup pigz"
-	ADDITIONAL_PKGS+=" xtools vpm vsv neofetch"
+	ADDITIONAL_PKGS+=" tree rsync lynx parallel tmate gpm evtest acpi acpid"
+	ADDITIONAL_PKGS+=" xz zstd cryptsetup lvm2 wireless_tools wpa_supplicant socklog-void openntpd"
+	ADDITIONAL_PKGS+=" bc geoip geoipupdate iputils"
+	ADDITIONAL_PKGS+=" xtools vpm vsv neofetch pfetch"
 	ADDITIONAL_PKGS+=" bash-completion"
-	#   ADDITIONAL_PKGS+=" wifi-firmware"
-	#   ADDITIONAL_PKGS+=" rtl8812au-dkms rtl8821cu-dkms rtl8822bu-dkms"
+	ADDITIONAL_PKGS+=" grub-btrfs-runit"
+	ADDITIONAL_PKGS+=" duf"
+	ADDITIONAL_PKGS+=" dfc"
 	ADDITIONAL_PKGS+=" cifs-utils ntfs-3g"
 	ADDITIONAL_PKGS+=" bubblewrap"
+	#--repository=https://chililinux.com/void/current
+	#ADDITIONAL_PKGS+=" chili-grub-void-theme"
+	ADDITIONAL_PKGS+=" grub-void-theme"
+	ADDITIONAL_PKGS+=" nano-syntax-highlighting"
+	ADDITIONAL_PKGS+=" blueberry"
+	ADDITIONAL_PKGS+=" porg"
+	#   ADDITIONAL_PKGS+=" wifi-firmware"
+	#   ADDITIONAL_PKGS+=" rtl8812au-dkms rtl8821cu-dkms rtl8822bu-dkms"
 	#	#pacman
 	ADDITIONAL_PKGS+=" pacman fakeroot bsdtar"
 }
@@ -113,7 +117,7 @@ sh_choose_packages_base() {
 sh_choose_packages_common_X() {
 	print_step "Selecionando pacotes X Common"
 	#xorg
-	ADDITIONAL_PKGS+=" xorg xinit xterm dbus dbus-x11 dbus-elogind polkit-elogind xdg-user-dirs xrdb"
+	ADDITIONAL_PKGS+=" xorg xinit xterm dbus dbus-x11 elogind dbus-elogind polkit-elogind xdg-user-dirs xrdb"
 	#file manager
 	ADDITIONAL_PKGS+=" Thunar"
 	#browser
@@ -127,15 +131,16 @@ sh_choose_packages_common_X() {
 	#terminal
 	ADDITIONAL_PKGS+=" xfce4-terminal"
 	ADDITIONAL_PKGS+=" cool-retro-term"
+	ADDITIONAL_PKGS+=" rxvt-unicode"
 	#bluetooth
-	ADDITIONAL_PKGS+=" bluez bluez-deprecated bluez-alsa bluedevil blueman bluez-cups blueberry gnome-bluetooth1"
+	ADDITIONAL_PKGS+=" bluez bluez-deprecated bluez-alsa bluedevil blueman bluez-cups gnome-bluetooth1"
 	#audio
 	ADDITIONAL_PKGS+=" pulseaudio pavucontrol pasystray gst-plugins-bad1 gst-plugins-good1 gst-plugins-ugly1 gst-plugins-base1"
 	ADDITIONAL_PKGS+=" xfce4-pulseaudio-plugin"
 	#	#ADDITIONAL_PKGS+=" pipewire wireplumber pulseaudio-utils alsa-pipewire libspa-bluetooth libjack-pipewire"
 	ADDITIONAL_PKGS+=" gnome-keyring"
 	ADDITIONAL_PKGS+=" orca"
-	xADDITIONAL_PKGS+=" setxkbmap"
+	ADDITIONAL_PKGS+=" setxkbmap"
 	ADDITIONAL_PKGS+=" numlockx"
 	ADDITIONAL_PKGS+=" nitrogen"
 	ADDITIONAL_PKGS+=" evtest-qt"
@@ -189,6 +194,11 @@ sh_choose_packages_xfce_base() {
 	ADDITIONAL_PKGS+=" firefox firefox-i18n-pt-BR"
 }
 
+sh_choose_packages_cinnamon_custom() {
+	print_step "Selecionando pacotes CINNAMON Custom"
+	ADDITIONAL_PKGS+=" cinnamon-all"
+}
+
 sh_choose_packages_xfce_custom() {
 	print_step "Selecionando pacotes XFCE Custom"
 	ADDITIONAL_PKGS+=" xfce4-screenshooter xfce4-dict"
@@ -214,7 +224,6 @@ sh_choose_packages_xfce_custom() {
 	ADDITIONAL_PKGS+=" xfce4-xkb-plugin"
 	ADDITIONAL_PKGS+=" xfce4-plugins"
 	ADDITIONAL_PKGS+=" mate-notification-daemon"
-	ADDITIONAL_PKGS+=" xfwm-axiom-theme"  #--repository=https://chililinux.com/void/current
 	ADDITIONAL_PKGS+=" plank"
 	ADDITIONAL_PKGS+=" adwaita-icon-theme"
 	ADDITIONAL_PKGS+=" xarchiver unrar zip unzip 7zip p7zip bzip2 file-roller"
@@ -223,14 +232,14 @@ sh_choose_packages_xfce_custom() {
 	ADDITIONAL_PKGS+=" cups system-config-printer system-config-printer-udev splix samsung-unified-driver"
 	ADDITIONAL_PKGS+=" brother-brlaser cups-pdf"
 	ADDITIONAL_PKGS+=" gvfs gvfs-smb gvfs-cdda inetutils iputils"
-	#	#ADDITIONAL_PKGS+=" lxterminal rxvt-unicode"
 	ADDITIONAL_PKGS+=" bat"
 	ADDITIONAL_PKGS+=" vlc celluloid"
 	ADDITIONAL_PKGS+=" evince"
 	ADDITIONAL_PKGS+=" mate-calc cmatrix xkill menulibre mugshot ocs-url"
 	ADDITIONAL_PKGS+=" nvme-cli"
 	ADDITIONAL_PKGS+=" remmina remmina-kwallet"
-
+	#--repository=https://chililinux.com/void/current
+	ADDITIONAL_PKGS+=" xfwm-axiom-theme"
 	#	#office
 	ADDITIONAL_PKGS+=" libreoffice libreoffice-i18n-pt-BR"
 	#
@@ -291,19 +300,23 @@ readconf() {
 	else
 		read -r -p "$@ [Y/n]"
 	fi
-	[[ ${REPLY^} == "" ]] && return $false
-	[[ ${REPLY^} == N ]] && return $true || return $false
+	[[ ${REPLY^} == "" ]] && return 0
+	[[ ${REPLY^} == N ]] && return 1 || return 0
 }
 
 sh_checkDependencies() {
 	local d
-	local errorFound=0
+	local errorFound=false
 	declare -a missing
 
 	for d in "${DEPENDENCIES[@]}"; do
-		[[ -z $(command -v "$d") ]] && missing+=("$d") && errorFound=1 && printf '%s\n' "${red}${cmsg_ERRO[$LC_DEFAULT]}${reset}: ${cmsg_CommandNotFound[$LC_DEFAULT]} ${cyan}'$d'${reset}"
+		if [[ -z $(command -v "$d") ]]; then
+		  missing+=("$d")
+		  errorFound=true
+		  printf '%s\n' "${red}${cmsg_ERRO[$LC_DEFAULT]}${reset}: ${cmsg_CommandNotFound[$LC_DEFAULT]} ${cyan}'$d'${reset}"
+    fi
 	done
-	if ((errorFound)); then
+	if $errorFound; then
 		echo "${yellow}--------------${cmsg_ImpossivelContinuar[$LC_DEFAULT]}-------------${reset}"
 		echo "${cmsg_ImpossivelContinuar1[$LC_DEFAULT]}" >&2
 		echo "${cmsg_ImpossivelContinuar2[$LC_DEFAULT]} \$PATH" >&2
@@ -313,7 +326,7 @@ sh_checkDependencies() {
 			echo
 			if readconf "${yellow}${cmsg_InstCommand[$LC_DEFAULT]} '${cyan}${missing[*]}${reset}' ?"; then
 				if xbps-install -Sy "${missing[@]}"; then
-					errorFound=0
+					errorFound=false
 					sh_checkDependencies
 				else
 					die "${cmsg_RunNewErro[$LC_DEFAULT]}"
@@ -392,26 +405,26 @@ print_step() {
 	local script_name2="${0##*/}[${FUNCNAME[2]}]:${BASH_LINENO[2]}"
 	CURRENT_STEP=$((CURRENT_STEP + 1))
 	#info_msg "$script_name1=>$cyan[${CURRENT_STEP}/${STEP_COUNT}]$reset $@"
-	info_msg "${cyan}${CURRENT_STEP}/${STEP_COUNT}]$reset $@"
+	info_msg "=>$cyan[${CURRENT_STEP}/${STEP_COUNT}]$reset $@"
 }
 
 mount_pseudofs() {
 	for f in sys dev proc; do
 		mkdir -p "$ROOTFS"/$f
 		mount --rbind /$f "$ROOTFS"/$f
-		LBIND=1
+		LBIND=true
 	done
 }
 
 umount_pseudofs() {
 	for f in sys dev proc; do
 		if ! umount -R -f "$ROOTFS/$f" >/dev/null 2>&-; then
-			if ((LBIND)); then
+			if $LBIND; then
 				info_msg "ERROR: failed to unmount $ROOTFS/$f/"
 				return 1
 			fi
 		fi
-		LBIND=0
+		LBIND=true
 	done
 }
 
@@ -451,7 +464,7 @@ copy_dracut_files() {
 	mkdir -p "$1"/usr/lib/dracut/modules.d/01vmklive
 	cp dracut/vmklive/* "$1"/usr/lib/dracut/modules.d/01vmklive/
 	# autologin none
-	if ((MAKE_FULL_X)); then
+	if $MAKE_FULL_X; then
 		touch "$1"/usr/lib/dracut/modules.d/01vmklive/noautologin
 	fi
 }
@@ -665,7 +678,7 @@ install_chili_apps() {
 
 install_pacman() {
 	sh_chroot_job "Instalando pacman App" "/usr/bin/pacman -Sydd pacman-contrib paru --noconfirm --overwrite \*"
-	if ((MAKE_X)); then
+	if $MAKE_X; then
 		sh_chroot_job "Instalando Brave-Browser" "/usr/bin/pacman -Sdd brave-browser --noconfirm --overwrite \*"
 		sh_chroot_job "Instalando Google Chrome" "/usr/bin/paru -Sdd google-chrome --noconfirm --overwrite \*"
 	fi
@@ -916,7 +929,7 @@ usage() {
 set_config_distro() {
 	declare -ga name
 
-	if ((MAKE_FULL_X)); then
+	if $MAKE_FULL_X; then
 		title='Void Linux Full X Custom'
 		name='fullx-custom'
 		aname=(config-fullx-custom
@@ -926,36 +939,42 @@ set_config_distro() {
 			config-xfce-base
 			config-xfce-custom
 			config-kde-custom
-			config-gnome-custom)
-	elif ((MAKE_ENLIGHTENMENT)); then
+			config-gnome-custom
+			config-cinnamon-custom
+			)
+	elif $MAKE_ENLIGHTENMENT; then
 		title='Void Linux Enlightenment Custom'
 		name='enlightenment-custom'
 		aname=('config-enlightenment-custom')
 		aname=('config-enlightenment-custom')
-	elif ((MAKE_AWESOME)); then
+	elif $MAKE_AWESOME; then
 		title='Void Linux Awesome Custom'
 		name='awesome-custom'
 		aname=('config-awesome-custom')
-	elif ((MAKE_FLUXBOX)); then
+	elif $MAKE_FLUXBOX; then
 		title='Void Linux Fluxbox Custom'
 		name='fluxfox-custom'
 		aname=('config-fluxbox-custom')
-	elif ((MAKE_KDE)); then
+	elif $MAKE_KDE; then
 		title='Void Linux Kde Custom'
 		name='kde-custom'
 		aname=('config-kde-custom')
-	elif ((MAKE_GNOME)); then
+	elif $MAKE_GNOME; then
 		title='Void Linux Gnome Custom'
 		name='gnome-custom'
 		aname=('config-gnome-custom')
-	elif ((MAKE_XFCE_BASE)); then
+	elif $MAKE_XFCE_BASE; then
 		title='Void Linux Xfce Base'
 		name='xfce-base'
 		aname=('config-xfce-base')
-	elif ((MAKE_XFCE_CUSTOM)); then
+	elif $MAKE_XFCE_CUSTOM; then
 		title='Void Linux Xfce Custom'
 		name='xfce-custom'
 		aname=('config-xfce-custom')
+	elif $MAKE_CINNAMON_CUSTOM; then
+		title='Void Linux Cinnamon Custom'
+		name='cinnamon-custom'
+		aname=('config-cinnamon-custom')
 	else
 		title='Void Linux Base Custom'
 		name='base-custom'
@@ -996,38 +1015,42 @@ while getopts "a:b:r:c:C:T:Kk:l:i:I:S:s:o:p:g:v:VhXxYyQqWwNnEeFfAGP" opt; do
 	C) BOOT_CMDLINE="$OPTARG" ;;
 	T) BOOT_TITLE="$OPTARG" ;;
 	x | X)
-		MAKE_X=1
-		MAKE_XFCE_BASE=1
+		MAKE_X=true
+		MAKE_XFCE_BASE=true
 		;;
 	y | Y)
-		MAKE_X=1
-		MAKE_XFCE_CUSTOM=1
+		MAKE_X=true
+		MAKE_XFCE_CUSTOM=true
+		;;
+	n | N)
+		MAKE_X=true
+		MAKE_CINNAMON_CUSTOM=true
 		;;
 	w | W)
-		MAKE_X=1
-		MAKE_AWESOME=1
+		MAKE_X=true
+		MAKE_AWESOME=true
 		;;
 	e | E)
-		MAKE_X=1
-		MAKE_ENLIGHTENMENT=1
+		MAKE_X=true
+		MAKE_ENLIGHTENMENT=true
 		;;
 	f | F)
-		MAKE_X=1
-		MAKE_FLUXBOX=1
+		MAKE_X=true
+		MAKE_FLUXBOX=true
 		;;
 	G)
-		MAKE_X=1
-		MAKE_GNOME=1
+		MAKE_X=true
+		MAKE_GNOME=true
 		;;
 	P)
-		MAKE_X=1
-		MAKE_KDE=1
+		MAKE_X=true
+		MAKE_KDE=true
 		;;
 	A)
-		MAKE_X=1
-		MAKE_FULL_X=1
+		MAKE_X=true
+		MAKE_FULL_X=true
 		;;
-	q | Q) QUIET=1 ;;
+	q | Q) QUIET=true ;;
 	v) LINUX_VERSION="$OPTARG" ;;
 	V)
 		version
@@ -1052,10 +1075,10 @@ fi
 
 set_config_distro
 sh_choose_packages_base
-if ((MAKE_X)); then
+if $MAKE_X; then
 	sh_choose_packages_common_X
-	if ((MAKE_FULL_X)); then
-		STEP_COUNT=59
+	if $MAKE_FULL_X; then
+		STEP_COUNT=72
 		sh_choose_packages_awesome
 		sh_choose_packages_enlightenment
 		sh_choose_packages_fluxbox
@@ -1063,21 +1086,23 @@ if ((MAKE_X)); then
 		sh_choose_packages_xfce_custom
 		sh_choose_packages_gnome
 		sh_choose_packages_kde
-	elif ((MAKE_ENLIGHTENMENT)); then
+	elif $MAKE_ENLIGHTENMENT; then
 		sh_choose_packages_enlightenment
-	elif ((MAKE_AWESOME)); then
+	elif $MAKE_AWESOME; then
 		sh_choose_packages_awesome
-	elif ((MAKE_FLUXBOX)); then
+	elif $MAKE_FLUXBOX; then
 		sh_choose_packages_fluxbox
-	elif ((MAKE_KDE)); then
+	elif $MAKE_KDE; then
 		sh_choose_packages_kde
-	elif ((MAKE_GNOME)); then
+	elif $MAKE_GNOME; then
 		sh_choose_packages_gnome
-	elif ((MAKE_XFCE_BASE)); then
+	elif $MAKE_XFCE_BASE; then
 		sh_choose_packages_xfce_base
-	elif ((MAKE_XFCE_CUSTOM)); then
+	elif $MAKE_XFCE_CUSTOM; then
 		sh_choose_packages_xfce_base
 		sh_choose_packages_xfce_custom
+	elif $MAKE_CINNAMON_CUSTOM; then
+		sh_choose_packages_cinnamon_custom
 	fi
 fi
 
@@ -1089,7 +1114,6 @@ fi
 # --repository=https://mirrors.servercentral.com/voidlinux/current/multilib/nonfree""\
 # --repository=https://chililinux.com/void/current""\
 # --repository=/github/void-packages/hostdir/binpkgs"
-# --repository=https://chililinux.com/void/current""\
 # --repository=/home/vcatafesta/github/void-packages/hostdir/binpkgs"
 XBPS_REPOSITORY="$XBPS_REPOSITORY --repository=https://repo-fastly.voidlinux.org/current""\
  --repository=https://repo-fastly.voidlinux.org/current/nonfree""\
@@ -1121,9 +1145,9 @@ PACKAGE_LIST="$BASE_SYSTEM_PKG $PACKAGE_LIST"
 #ROOTDIR='/tmp'
 #mount -o remount,size=18G,mode=1777 tmpfs /dev/shm
 #ROOTDIR='/dev/shm'
-ROOTDIR="/lfs/voidlinux"
 #mount /dev/nvme0n1p2 /mnt/voidlinux
 #ROOTDIR='/mnt/voidlinux/@/lixo'
+ROOTDIR="/lfs/voidlinux"
 
 if [ -n "$ROOTDIR" ]; then
 	#	BUILDDIR=$(mktemp --tmpdir="$ROOTDIR" -d)
@@ -1205,11 +1229,11 @@ print_step "Instalando pacotes void em $ROOTFS..."
 install_packages
 install_skel_user
 install_skel_root
-if ((MAKE_X)); then
+if $MAKE_X; then
 	#   install_installer
 	:
 fi
-if ((MAKE_XFCE_CUSTOM)); then
+if $MAKE_XFCE_CUSTOM; then
 	install_wallpapers
 	install_themes
 	install_icons
@@ -1223,9 +1247,9 @@ install_pacman
 finish_clean
 
 : ${DEFAULT_SERVICE_LIST:=agetty-tty1 agetty-tty2 agetty-tty3 agetty-tty4 agetty-tty5 agetty-tty6 udevd dhcpcd}
-if ((MAKE_X)); then
+if $MAKE_X; then
 	: ${ADDITIONAL_SERVICE_LIST:=NetworkManager dbus elogind lxdm polkitd bluetoothd connmand acpid}
-	if ((MAKE_XFCE_CUSTOM)); then
+	if $MAKE_XFCE_CUSTOM; then
 		ADDITIONAL_SERVICE_LIST+=' avahi-daemon cupsd irqbalance sshd uuidd'
 	fi
 else # tty
