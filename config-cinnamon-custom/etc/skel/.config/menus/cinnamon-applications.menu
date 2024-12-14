@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+<!DOCTYPE Menu
+  PUBLIC '-//freedesktop//DTD Menu 1.0//EN'
+  'http://standards.freedesktop.org/menu-spec/menu-1.0.dtd'>
+<Menu>
+	<Name>Applications</Name>
+	<MergeFile type="parent">/etc/xdg/menus/cinnamon-applications.menu</MergeFile>
+	<Menu>
+		<Name>Biglinux</Name>
+	</Menu>
+	<Menu>
+		<Name>Big Apps</Name>
+		<Include>
+			<Filename>big-store.desktop</Filename>
+		</Include>
+		<AppDir>/home/vcatafesta/.local/share/applications</AppDir>
+	</Menu>
+</Menu>

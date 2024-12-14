@@ -1,0 +1,10 @@
+[Desktop Entry]
+Categories=System
+Exec=big-preload-user-gen-list
+Hidden=false
+Name=Preload user desktop
+StartupNotify=false
+Terminal=false
+Type=Application
+X-Deepin-GenerateSource=/home/vcatafesta/.config/autostart/big-preload-user.desktop
+

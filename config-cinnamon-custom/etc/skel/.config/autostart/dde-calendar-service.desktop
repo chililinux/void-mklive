@@ -1,0 +1,10 @@
+[Desktop Entry]
+Exec=/bin/bash -c "dbus-send --session --print-reply --dest=com.deepin.dataserver.Calendar /com/deepin/dataserver/Calendar/AccountManager com.deepin.dataserver.Calendar.AccountManager.updateRemindJob boolean:true"
+Hidden=false
+Name=dde-calendar-service
+NoDisplay=true
+Terminal=false
+Type=Application
+X-Deepin-GenerateSource=/home/vcatafesta/.config/autostart/dde-calendar-service.desktop
+X-Deepin-Vendor=user-custom
+
