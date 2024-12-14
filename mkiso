@@ -5,7 +5,7 @@
 #
 # mkiso
 # Created: 2023/09/18 - 09:05
-# Altered: 2024/12/14 - 00:00
+# Altered: 2024/12/14 - 06:43
 #
 # Copyright (c) 2009-2015 Juan Romero Pardines.
 # Copyright (c) 2023-2024 Vilmar Catafesta <vcatafesta@gmail.com>
@@ -1305,6 +1305,12 @@ if [ "${#INCLUDE_DIRS[@]}" -gt 0 ]; then
 	print_step "Copying directory structures into the rootfs ..."
 	copy_include_directories
 fi
+
+print_step "Substituir VOLD_Live pelo valor de $VOL_ID em ./grub/grub_void.cfg.in"
+sudo sed -i "s/VOID_LIVE/${VOL_ID}/g" ./grub/grub_void.cfg.in
+
+print_step "Substituir VOLD_Live pelo valor de $VOL_ID em ./isolinux/isolinux.cfg.in"
+sudo sed -i "s/VOID_LIVE/${VOL_ID}/g" ./isolinux/isolinux.cfg.in
 
 print_step "Gerando imagem initramfs ($INITRAMFS_COMPRESSION)..."
 generate_initramfs
