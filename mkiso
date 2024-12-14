@@ -81,8 +81,9 @@ declare -gi STEP_COUNT=72
 declare -g VOL_ID='VOID_LIVE'
 declare -g title
 declare -g name
-declare -g SQUASHFS_COMPRESSION=xz
 declare -g INITRAM_COMPRESSION=xz
+#declare -g SQUASHFS_COMPRESSION=xz
+declare -g SQUASHFS_COMPRESSION=zstd
 
 sh_choose_packages_base() {
 	print_step "Selecionando pacotes essenciais"
@@ -832,7 +833,8 @@ get_compression_options() {
 	case $1 in
 	gzip) param=" -noappend -ef exclude_dir -comp gzip -Xcompression-level 1" ;;
 	xz) param=" -noappend -ef exclude_dir -b 1048576 -comp xz -Xdict-size 100%" ;;
-	zstd) param=" -noappend -ef exclude_dir -b 1M -comp zstd -Xcompression-level 1" ;;
+	#zstd) param=" -noappend -ef exclude_dir -b 1M -comp zstd -Xcompression-level 1" ;;
+	zstd) param=" -noappend -ef exclude_dir -b 1M -comp zstd -Xcompression-level 20" ;;
 	lzma) param=" -noappend -ef exclude_dir -b 1M -comp lzma" ;;
 	lz4) param=" -noappend -ef exclude_dir -b 1M -comp lz4 -Xhc" ;;
 	esac
@@ -1135,7 +1137,8 @@ ARCH=$(xbps-uhelper arch)
 : ${KEYMAP:=br-abnt2}
 : ${LOCALE:=pt_BR.UTF-8}
 : ${INITRAMFS_COMPRESSION:=xz}
-: ${SQUASHFS_COMPRESSION:=xz}
+#: ${SQUASHFS_COMPRESSION:=xz}
+: ${SQUASHFS_COMPRESSION:=zstd}
 : ${BASE_SYSTEM_PKG:=base-system}
 : ${BOOT_TITLE:="$title"}
 
