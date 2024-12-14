@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
-#
+# -*- coding: utf-8 -*-
+# shellcheck shell=bash disable=SC1091,SC2039,SC2166
 # vim: set ts=4 sw=4 et:
 #
-#-
+# mkiso
+# Created: 2023/09/18 - 09:05
+# Altered: 2024/12/14 - 00:00
+#
 # Copyright (c) 2009-2015 Juan Romero Pardines.
 # Copyright (c) 2023-2024 Vilmar Catafesta <vcatafesta@gmail.com>
 # All rights reserved.
@@ -767,8 +771,10 @@ generate_isolinux_boot() {
 		"$ISOLINUX_DIR"/isolinux.cfg
 
 	# include memtest86+
+	print_step "Include memtest86+"
 	#cp -f "$VOIDHOSTDIR"/boot/memtest.bin "$BOOT_DIR"
 	cp -f "$VOIDHOSTDIR"/boot/memtest86+/memtest.bin "$BOOT_DIR"
+	cp -f "$VOIDHOSTDIR"/boot/memtest86+/memtest.efi "$BOOT_DIR"
 }
 
 generate_grub_efi_boot() {
