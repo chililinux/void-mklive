@@ -1273,23 +1273,23 @@ if [ "${#INCLUDE_DIRS[@]}" -gt 0 ]; then
 	copy_include_directories
 fi
 
-print_step "Generating initramfs image ($INITRAMFS_COMPRESSION)..."
+print_step "Gerando imagem initramfs ($INITRAMFS_COMPRESSION)..."
 generate_initramfs
 
-print_step "Generating isolinux support for PC-BIOS systems..."
+print_step "Gerando suporte isolinux para systema PC-BIOS ..."
 generate_isolinux_boot
 
-print_step "Generating GRUB support for EFI systems..."
+print_step "Gerando suporte GRUB para sistema EFI ..."
 generate_grub_efi_boot
 
-print_step "Cleaning up rootfs..."
+print_step "Limpando rootfs..."
 cleanup_rootfs
 
-print_step "Generating squashfs image ($SQUASHFS_COMPRESSION) from rootfs..."
+print_step "Genendo image squashfs ($SQUASHFS_COMPRESSION) de rootfs..."
 generate_squashfs
 
-print_step "Generating ISO image..."
+print_step "Generando imagem ISO ..."
 generate_iso_image
 
 hsize=$(du -sh "$OUTPUT_FILE" | awk '{print $1}')
-info_msg "${green}Created $(readlink -f "$OUTPUT_FILE") ($hsize) successfully.${reset}"
+info_msg "${green}Iso file created $(readlink -f "$OUTPUT_FILE") ($hsize) successfully.${reset}"
