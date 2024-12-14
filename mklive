@@ -533,7 +533,7 @@ install_packages() {
 	result="${PIPESTATUS[0]}"
 	[ $result -ne 0 ] && die "Failed to install $PACKAGE_LIST"
 
-	print_step "Instalando void meta pkgs ADDITIONAL em rootfs..."
+	print_step "Instalando void meta pkgs ADDITIONAL em $ROOTFS..."
 	{
 		LC_ALL=C XBPS_ARCH=$BASE_ARCH "${XBPS_INSTALL_CMD}" -U -r "$ROOTFS" ${XBPS_REPOSITORY} -c "$XBPS_CACHEDIR" -y $ADDITIONAL_PKGS
 	} 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
@@ -886,8 +886,16 @@ generate_squashfs() {
 		mkdir -p "$IMAGEDIR/LiveOS"
 
 		#       "$options" || die "Failed to generate squashfs image"
-		"$VOIDHOSTDIR"/usr/bin/mksquashfs "$BUILDDIR/tmp" "$IMAGEDIR/LiveOS/squashfs.img" \
-			-comp "${SQUASHFS_COMPRESSION}" || die "Failed to generate squashfs image"
+#		"$VOIDHOSTDIR"/usr/bin/mksquashfs \
+#		  "$BUILDDIR/tmp" \
+#		  "$IMAGEDIR/LiveOS/squashfs.img" \
+#			-comp "${SQUASHFS_COMPRESSION}" || die "Failed to generate squashfs image"
+
+		"$VOIDHOSTDIR"/usr/bin/mksquashfs \
+		  "$BUILDDIR/tmp" \
+		  "$IMAGEDIR/LiveOS/squashfs.img" \
+			"$options" || die "Failed to generate squashfs image"
+
 		chmod 444 "$IMAGEDIR/LiveOS/squashfs.img"
 
 		# Remove rootfs and temporary dirs, we don't need them anymore.
