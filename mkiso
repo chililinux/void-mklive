@@ -1020,12 +1020,12 @@ set_config_distro() {
     VOL_ID='VOID_LIVE_BASE_CUSTOM'
 		name='base-custom'
 	fi
-	print_step "Building ISO    => ${yellow}$title${reset}"
-	print_step "Profile         => ${yellow}$name{reset}"
-	print_step "Output file ISO => ${yellow}$OUTPUT_FILE${reset}"
-	print_step "Compression SFS => ${yellow}$SQUASHFS_COMPRESSION${reset}"
-	print_step "Compression RAM => ${yellow}$INITRAM_COMPRESSION${reset}"
-	print_step "ISO LABEL       => ${yellow}$VOL_ID${reset}"
+	print_step "Building ISO    => ${yellow}${title}${reset}"
+	print_step "Profile         => ${yellow}${name}${reset}"
+	print_step "Output file ISO => ${yellow}${OUTPUT_FILE}${reset}"
+	print_step "Compression SFS => ${yellow}${SQUASHFS_COMPRESSION}${reset}"
+	print_step "Compression RAM => ${yellow}${INITRAM_COMPRESSION}${reset}"
+	print_step "ISO LABEL       => ${yellow}${VOL_ID}${reset}"
 }
 
 #
