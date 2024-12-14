@@ -59,7 +59,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='1.0.28-20240228'
+readonly _VERSION_='1.12.14-20241214'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(rsync sed cat cp umount losetup grep chroot mkfs.vfat tee)
 
@@ -95,12 +95,12 @@ sh_choose_packages_base() {
 	declare -g PROGNAME=$(basename "$0")
 	declare -g REQUIRED_PKGS="base-files libgcc dash coreutils sed tar gawk syslinux grub-i386-efi grub-x86_64-efi memtest86+ squashfs-tools xorriso"
 	declare -g INITRAMFS_PKGS="binutils device-mapper dhclient dracut-network openresolv"
-	declare -g ADDITIONAL_PKGS="dialog gettext curl wget git pv nano parted"
+	declare -g ADDITIONAL_PKGS="dialog gettext curl wget git github-cli pv nano parted"
 	ADDITIONAL_PKGS+=" btop htop"
 	ADDITIONAL_PKGS+=" tree rsync lynx parallel tmate gpm evtest acpi acpid"
 	ADDITIONAL_PKGS+=" xz zstd cryptsetup lvm2 wireless_tools wpa_supplicant socklog-void openntpd"
 	ADDITIONAL_PKGS+=" bc geoip geoipupdate iputils"
-	ADDITIONAL_PKGS+=" xtools vpm vsv neofetch pfetch"
+	ADDITIONAL_PKGS+=" xtools vpm vsv neofetch pfetch fastfetch"
 	ADDITIONAL_PKGS+=" bash-completion"
 	ADDITIONAL_PKGS+=" grub-btrfs-runit"
 	ADDITIONAL_PKGS+=" duf"
@@ -128,17 +128,28 @@ sh_choose_packages_common_X() {
 	#browser
 	ADDITIONAL_PKGS+=" firefox firefox-i18n-pt-BR"
 	#fonts
-	ADDITIONAL_PKGS+=" noto-fonts-emoji ttf-ubuntu-font-family font-iosevka nerd-fonts-symbols-ttf"
+	ADDITIONAL_PKGS+=" noto-fonts-emoji"
+	ADDITIONAL_PKGS+=" ttf-ubuntu-font-family"
+	ADDITIONAL_PKGS+=" font-iosevka nerd-fonts-symbols-ttf"
+	ADDITIONAL_PKGS+=" nerd-fonts-symbols-ttf"
+	ADDITIONAL_PKGS+=" font-awesome"
 	#themes
 	ADDITIONAL_PKGS+=" Adapta"
 	#network
-	ADDITIONAL_PKGS+=" NetworkManager network-manager-applet"
+	ADDITIONAL_PKGS+=" NetworkManager"
+	ADDITIONAL_PKGS+=" network-manager-applet"
 	#terminal
 	ADDITIONAL_PKGS+=" xfce4-terminal"
 	ADDITIONAL_PKGS+=" cool-retro-term"
 	ADDITIONAL_PKGS+=" rxvt-unicode"
 	#bluetooth
-	ADDITIONAL_PKGS+=" bluez bluez-deprecated bluez-alsa bluedevil blueman bluez-cups gnome-bluetooth1"
+	ADDITIONAL_PKGS+=" bluez"
+	ADDITIONAL_PKGS+=" bluez-deprecated"
+	ADDITIONAL_PKGS+=" bluez-alsa"
+	ADDITIONAL_PKGS+=" bluedevil"
+	ADDITIONAL_PKGS+=" blueman"
+	ADDITIONAL_PKGS+=" bluez-cups"
+	ADDITIONAL_PKGS+=" gnome-bluetooth1"
 	#audio
 	ADDITIONAL_PKGS+=" pulseaudio pavucontrol pasystray gst-plugins-bad1 gst-plugins-good1 gst-plugins-ugly1 gst-plugins-base1"
 	ADDITIONAL_PKGS+=" xfce4-pulseaudio-plugin"
@@ -158,12 +169,31 @@ sh_choose_packages_common_X() {
 	#ADDITIONAL_PKGS+=" lxappearance lxinput lxrandr lxtask"
 	#ADDITIONAL_PKGS+=" slim"
 	#ADDITIONAL_PKGS+=" lightdm"
+	ADDITIONAL_PKGS+=" plank"
+	ADDITIONAL_PKGS+=" adwaita-icon-theme"
+	ADDITIONAL_PKGS+=" adwaita-plus"
+	ADDITIONAL_PKGS+=" xarchiver unrar zip unzip 7zip p7zip bzip2 file-roller"
+	#	#ADDITIONAL_PKGS+=" fonts-roboto-ttf liberation-fonts-ttf dejavu-fonts-ttf fonts-droid-ttf fonts-croscore-ttf terminus-font font-emoji-one-color google-fonts-ttf"
+	ADDITIONAL_PKGS+=" avahi irqbalance"
+	ADDITIONAL_PKGS+=" cups system-config-printer system-config-printer-udev splix samsung-unified-driver"
+	ADDITIONAL_PKGS+=" gvfs gvfs-smb gvfs-cdda inetutils iputils"
+	ADDITIONAL_PKGS+=" bat"
+	ADDITIONAL_PKGS+=" vlc celluloid"
+	ADDITIONAL_PKGS+=" mate-calc cmatrix xkill menulibre mugshot ocs-url"
+	ADDITIONAL_PKGS+=" nvme-cli"
+	ADDITIONAL_PKGS+=" remmina remmina-kwallet"
+	#--repository=https://chililinux.com/void/current
+	ADDITIONAL_PKGS+=" xfwm-axiom-theme"
+	#	#office
+	ADDITIONAL_PKGS+=" libreoffice libreoffice-i18n-pt-BR"
+	#
 }
 
 sh_choose_packages_awesome() {
 	print_step "Selecionando pacotes Awesome Custom"
 	#awesome
-	ADDITIONAL_PKGS+=" awesome polybar"
+	ADDITIONAL_PKGS+=" awesome"
+	ADDITIONAL_PKGS+=" polybar"
 	ADDITIONAL_PKGS+=" pcmanfm"
 	ADDITIONAL_PKGS+=" font-awesome"
 }
@@ -183,30 +213,38 @@ sh_choose_packages_gnome() {
 sh_choose_packages_fluxbox() {
 	print_step "Selecionando pacotes Fluxbox Custom"
 	#fluxbox
-	ADDITIONAL_PKGS+=" fluxbox polybar"
+	ADDITIONAL_PKGS+=" fluxbox"
+	ADDITIONAL_PKGS+=" polybar"
 	ADDITIONAL_PKGS+=" pcmanfm"
+	ADDITIONAL_PKGS+=" rofi"
 }
 
 sh_choose_packages_enlightenment() {
 	print_step "Selecionando pacotes Enlightenment Custom"
 	#enlightenment
-	ADDITIONAL_PKGS+=" enlightenment efl exquisite"
+	ADDITIONAL_PKGS+=" enlightenment"
+	ADDITIONAL_PKGS+=" efl"
+	ADDITIONAL_PKGS+=" exquisite"
 }
 
 sh_choose_packages_xfce_base() {
 	print_step "Selecionando pacotes XFCE Base"
 	ADDITIONAL_PKGS+=" xfce4"
-	ADDITIONAL_PKGS+=" firefox firefox-i18n-pt-BR"
+	ADDITIONAL_PKGS+=" firefox"
+	ADDITIONAL_PKGS+=" firefox-i18n-pt-BR"
 }
 
 sh_choose_packages_cinnamon_custom() {
 	print_step "Selecionando pacotes CINNAMON Custom"
 	ADDITIONAL_PKGS+=" cinnamon-all"
+	ADDITIONAL_PKGS+=" playerctl"
+	ADDITIONAL_PKGS+=" plank"
 }
 
 sh_choose_packages_xfce_custom() {
 	print_step "Selecionando pacotes XFCE Custom"
-	ADDITIONAL_PKGS+=" xfce4-screenshooter xfce4-dict"
+	ADDITIONAL_PKGS+=" xfce4-screenshooter"
+	ADDITIONAL_PKGS+=" xfce4-dict"
 	ADDITIONAL_PKGS+=" xfce4-battery-plugin"
 	ADDITIONAL_PKGS+=" xfce4-clipman-plugin"
 	ADDITIONAL_PKGS+=" xfce4-cpufreq-plugin"
@@ -229,25 +267,9 @@ sh_choose_packages_xfce_custom() {
 	ADDITIONAL_PKGS+=" xfce4-xkb-plugin"
 	ADDITIONAL_PKGS+=" xfce4-plugins"
 	ADDITIONAL_PKGS+=" mate-notification-daemon"
-	ADDITIONAL_PKGS+=" plank"
-	ADDITIONAL_PKGS+=" adwaita-icon-theme"
-	ADDITIONAL_PKGS+=" xarchiver unrar zip unzip 7zip p7zip bzip2 file-roller"
 	#	#ADDITIONAL_PKGS+=" fonts-roboto-ttf liberation-fonts-ttf dejavu-fonts-ttf fonts-droid-ttf fonts-croscore-ttf terminus-font font-emoji-one-color google-fonts-ttf"
-	ADDITIONAL_PKGS+=" avahi irqbalance"
-	ADDITIONAL_PKGS+=" cups system-config-printer system-config-printer-udev splix samsung-unified-driver"
-	ADDITIONAL_PKGS+=" brother-brlaser cups-pdf"
-	ADDITIONAL_PKGS+=" gvfs gvfs-smb gvfs-cdda inetutils iputils"
-	ADDITIONAL_PKGS+=" bat"
-	ADDITIONAL_PKGS+=" vlc celluloid"
-	ADDITIONAL_PKGS+=" evince"
-	ADDITIONAL_PKGS+=" mate-calc cmatrix xkill menulibre mugshot ocs-url"
-	ADDITIONAL_PKGS+=" nvme-cli"
-	ADDITIONAL_PKGS+=" remmina remmina-kwallet"
-	#--repository=https://chililinux.com/void/current
-	ADDITIONAL_PKGS+=" xfwm-axiom-theme"
-	#	#office
-	ADDITIONAL_PKGS+=" libreoffice libreoffice-i18n-pt-BR"
-	#
+	ADDITIONAL_PKGS+=" brother-brlaser"
+	ADDITIONAL_PKGS+=" cups-pdf"
 }
 
 debug() {
@@ -940,6 +962,7 @@ set_config_distro() {
 
 	if $MAKE_FULL_X; then
 		title='Void Linux Full X Custom'
+    VOL_ID='VOID_LIVE_FULLX'
 		name='fullx-custom'
 		aname=(config-fullx-custom
 			config-enlightenment-custom
@@ -953,42 +976,52 @@ set_config_distro() {
 			)
 	elif $MAKE_ENLIGHTENMENT; then
 		title='Void Linux Enlightenment Custom'
+    VOL_ID='VOID_LIVE_ENLIGHTENMENT'
 		name='enlightenment-custom'
 		aname=('config-enlightenment-custom')
 		aname=('config-enlightenment-custom')
 	elif $MAKE_AWESOME; then
 		title='Void Linux Awesome Custom'
+    VOL_ID='VOID_LIVE_AWESOME'
 		name='awesome-custom'
 		aname=('config-awesome-custom')
 	elif $MAKE_FLUXBOX; then
 		title='Void Linux Fluxbox Custom'
+    VOL_ID='VOID_LIVE_FLUXBOX'
 		name='fluxfox-custom'
 		aname=('config-fluxbox-custom')
 	elif $MAKE_KDE; then
 		title='Void Linux Kde Custom'
+    VOL_ID='VOID_LIVE_KDE'
 		name='kde-custom'
 		aname=('config-kde-custom')
 	elif $MAKE_GNOME; then
 		title='Void Linux Gnome Custom'
+    VOL_ID='VOID_LIVE_GNOME'
 		name='gnome-custom'
 		aname=('config-gnome-custom')
 	elif $MAKE_XFCE_BASE; then
 		title='Void Linux Xfce Base'
+    VOL_ID='VOID_LIVE_XFCE_BASE'
 		name='xfce-base'
 		aname=('config-xfce-base')
 	elif $MAKE_XFCE_CUSTOM; then
 		title='Void Linux Xfce Custom'
+    VOL_ID='VOID_LIVE_XFCE_CUSTOM'
 		name='xfce-custom'
 		aname=('config-xfce-custom')
 	elif $MAKE_CINNAMON_CUSTOM; then
 		title='Void Linux Cinnamon Custom'
+    VOL_ID='VOID_LIVE_CINNAMON_CUSTOM'
 		name='cinnamon-custom'
 		aname=('config-cinnamon-custom')
 	else
 		title='Void Linux Base Custom'
+    VOL_ID='VOID_LIVE_BASE_CUSTOM'
 		name='base-custom'
 	fi
 	print_step "Building ISO    => ${yellow}$title${reset}"
+	print_step "Profile         => ${yellow}$name{reset}"
 	print_step "Output file ISO => ${yellow}$OUTPUT_FILE${reset}"
 	print_step "Compression SFS => ${yellow}$SQUASHFS_COMPRESSION${reset}"
 	print_step "Compression RAM => ${yellow}$INITRAM_COMPRESSION${reset}"
