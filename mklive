@@ -1306,10 +1306,10 @@ if [ "${#INCLUDE_DIRS[@]}" -gt 0 ]; then
 	copy_include_directories
 fi
 
-print_step "Substituir VOLD_Live pelo valor de $VOL_ID em ./grub/grub_void.cfg.in"
+print_step "Substituir iso label VOID_LIVE por $VOL_ID em ./grub/grub_void.cfg.in"
 sudo sed -i "s/VOID_LIVE/${VOL_ID}/g" ./grub/grub_void.cfg.in
 
-print_step "Substituir VOLD_Live pelo valor de $VOL_ID em ./isolinux/isolinux.cfg.in"
+print_step "Substituir iso label VOID_LIVE por $VOL_ID em ./isolinux/isolinux.cfg.in"
 sudo sed -i "s/VOID_LIVE/${VOL_ID}/g" ./isolinux/isolinux.cfg.in
 
 print_step "Gerando imagem initramfs ($INITRAMFS_COMPRESSION)..."
