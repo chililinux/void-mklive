@@ -1265,7 +1265,7 @@ if $MAKE_X; then
 else # tty
 	ADDITIONAL_SERVICE_LIST+=' gpm'
 fi
-print_step "Enabling services... ${DEFAULT_SERVICE_LIST} ${SERVICE_LIST} ${ADDITIONAL_SERVICE_LIST}"
+print_step "Ativando serviços... ${DEFAULT_SERVICE_LIST} ${SERVICE_LIST} ${ADDITIONAL_SERVICE_LIST}"
 enable_services ${DEFAULT_SERVICE_LIST} ${SERVICE_LIST} ${ADDITIONAL_SERVICE_LIST}
 
 if [ "${#INCLUDE_DIRS[@]}" -gt 0 ]; then
