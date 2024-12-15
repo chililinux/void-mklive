@@ -745,6 +745,7 @@ copy_include_directories() {
 }
 
 configure_plymouth() {
+	print_step "Configurando plymouth em: $1/etc/dracut.conf.d/plymouth.conf"
   mkdir -p "$1/etc/dracut.conf.d"
   echo 'add_dracutmodules+=" plymouth "' > "$1/etc/dracut.conf.d/plymouth.conf"
 }
