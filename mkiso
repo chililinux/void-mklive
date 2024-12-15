@@ -752,6 +752,31 @@ configure_plymouth() {
 	chroot "$ROOTFS" env -i plymouth-set-default-theme fade-in
 	result="${PIPESTATUS[0]}"
 	[ $result -ne 0 ] && die "Falha ao configurar tema"
+
+  print_step "Criando wrapper plymouth $1/usr/bin/plymouth-show-log-voidlinux"
+  cat <<EOF > "$1/etc/runit/core-services/04-plymouth-show-log-voidlinux.sh"
+#!/usr/bin/env bash
+
+# Exibe uma mensagem inicial usando o Plymouth
+plymouth display-message --text="Booting Void Linux"
+
+# Usamos o arquivo de log /var/log/dmesg.log, que contém mensagens do kernel durante a inicialização
+tail -f /var/log/dmesg.log | while read -r line; do
+  # Exibe as últimas 50 caracteres da linha usando o Plymouth
+  plymouth display-message --text="$(echo "\$line" | cut -c -50)"
+
+  # Verifica se houve algum erro ao exibir a mensagem no Plymouth
+  if [ \$? -ne 0 ]; then
+    break
+  fi
+done
+
+# Exibe uma mensagem de encerramento caso o Plymouth morra
+echo "Plymouth morreu, saindo..."
+EOF
+
+# Torna o script gerado executável
+chmod +x "$1/etc/runit/core-services/04-plymouth-show-log-voidlinux.sh"
 }
 
 generate_initramfs() {
