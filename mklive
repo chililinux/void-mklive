@@ -86,8 +86,8 @@ declare -g VOL_ID='VOID_LIVE'
 declare -g title
 declare -g name
 declare -g INITRAM_COMPRESSION=xz
-#declare -g SQUASHFS_COMPRESSION=xz
-declare -g SQUASHFS_COMPRESSION=zstd
+declare -g SQUASHFS_COMPRESSION=xz
+#declare -g SQUASHFS_COMPRESSION=zstd
 
 sh_choose_packages_base() {
 	print_step "Selecionando pacotes essenciais"
@@ -96,7 +96,7 @@ sh_choose_packages_base() {
 	declare -g REQUIRED_PKGS="base-files libgcc dash coreutils sed tar gawk syslinux grub-i386-efi grub-x86_64-efi memtest86+ squashfs-tools xorriso"
 	declare -g INITRAMFS_PKGS="binutils device-mapper dhclient dracut-network openresolv"
 	declare -g ADDITIONAL_PKGS="dialog gettext curl wget git github-cli pv nano parted"
-	ADDITIONAL_PKGS+=" plymouth"
+	ADDITIONAL_PKGS+=" plymouth plymouth-data"
 	ADDITIONAL_PKGS+=" btop htop"
 	ADDITIONAL_PKGS+=" tree rsync lynx parallel tmate gpm evtest acpi acpid"
 	ADDITIONAL_PKGS+=" xz zstd cryptsetup lvm2 wireless_tools wpa_supplicant socklog-void openntpd"
@@ -746,8 +746,12 @@ copy_include_directories() {
 
 configure_plymouth() {
 	print_step "Configurando plymouth em: $1/etc/dracut.conf.d/plymouth.conf"
-  mkdir -p "$1/etc/dracut.conf.d"
-  echo 'add_dracutmodules+=" plymouth "' > "$1/etc/dracut.conf.d/plymouth.conf"
+	mkdir -p "$1/etc/dracut.conf.d"
+	echo 'add_dracutmodules+=" plymouth "' > "$1/etc/dracut.conf.d/plymouth.conf"
+	print_step "Configurando tema plymouth fade-in"
+	chroot "$ROOTFS" env -i plymouth-set-default-theme fade-in
+	result="${PIPESTATUS[0]}"
+	[ $result -ne 0 ] && die "Falha ao configurar tema"
 }
 
 generate_initramfs() {
@@ -757,7 +761,7 @@ generate_initramfs() {
 	{
 		copy_dracut_files "$ROOTFS"
 		copy_autoinstaller_files "$ROOTFS"
-    configure_plymouth
+    	configure_plymouth
 		chroot "$ROOTFS" env -i /usr/bin/dracut -N --"${INITRAMFS_COMPRESSION}" --add-drivers "ahci" --force-add "vmklive autoinstaller" --omit systemd "/boot/initrd" $KERNELVERSION
 		result="${PIPESTATUS[0]}"
 		[ $result -ne 0 ] && die "Failed to generate the initramfs"
@@ -894,15 +898,15 @@ generate_squashfs() {
 		mkdir -p "$IMAGEDIR/LiveOS"
 
 		#       "$options" || die "Failed to generate squashfs image"
-#		"$VOIDHOSTDIR"/usr/bin/mksquashfs \
-#		  "$BUILDDIR/tmp" \
-#		  "$IMAGEDIR/LiveOS/squashfs.img" \
-#			-comp "${SQUASHFS_COMPRESSION}" || die "Failed to generate squashfs image"
-
 		"$VOIDHOSTDIR"/usr/bin/mksquashfs \
 		  "$BUILDDIR/tmp" \
 		  "$IMAGEDIR/LiveOS/squashfs.img" \
-			"$options" || die "Failed to generate squashfs image"
+			-comp "${SQUASHFS_COMPRESSION}" || die "Failed to generate squashfs image"
+
+#		"$VOIDHOSTDIR"/usr/bin/mksquashfs \
+#		  "$BUILDDIR/tmp" \
+#		  "$IMAGEDIR/LiveOS/squashfs.img" \
+#			"$options" || die "Failed to generate squashfs image"
 
 		chmod 444 "$IMAGEDIR/LiveOS/squashfs.img"
 
@@ -1322,11 +1326,10 @@ if [ "${#INCLUDE_DIRS[@]}" -gt 0 ]; then
 	copy_include_directories
 fi
 
-print_step "Substituir 'CDLABEL=VOID_LIVE' por 'CDLABEL=$VOL_ID' em ./grub/grub_void.cfg.in"
-sudo sed -i "s/CDLABEL=[^ ]*/CDLABEL=${VOL_ID}/g" ./grub/grub_void.cfg.in
-
-print_step "Substituir 'CDLABEL=VOID_LIVE' por 'CDLABEL=$VOL_ID' em ./isolinux/isolinux.cfg.in"
-sudo sed -i "s/CDLABEL=[^ ]*/CDLABEL=${VOL_ID}/g" ./isolinux/isolinux.cfg.in
+print_step "Substituir 'CDLABEL=VOID_LIVE' por 'CDLABEL=$VOL_ID' em ./grub/grub_void.cfg.in e ./isolinux/isolinux.cfg.in"
+for file in ./grub/grub_void.cfg.in ./isolinux/isolinux.cfg.in; do
+  sudo sed -i "s/CDLABEL=[^ ]*/CDLABEL=${VOL_ID}/g" "$file"
+done
 
 print_step "Gerando imagem initramfs ($INITRAMFS_COMPRESSION)..."
 generate_initramfs
