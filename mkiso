@@ -96,6 +96,7 @@ sh_choose_packages_base() {
 	declare -g REQUIRED_PKGS="base-files libgcc dash coreutils sed tar gawk syslinux grub-i386-efi grub-x86_64-efi memtest86+ squashfs-tools xorriso"
 	declare -g INITRAMFS_PKGS="binutils device-mapper dhclient dracut-network openresolv"
 	declare -g ADDITIONAL_PKGS="dialog gettext curl wget git github-cli pv nano parted"
+	ADDITIONAL_PKGS+=" plymouth"
 	ADDITIONAL_PKGS+=" btop htop"
 	ADDITIONAL_PKGS+=" tree rsync lynx parallel tmate gpm evtest acpi acpid"
 	ADDITIONAL_PKGS+=" xz zstd cryptsetup lvm2 wireless_tools wpa_supplicant socklog-void openntpd"
@@ -743,6 +744,11 @@ copy_include_directories() {
 	done
 }
 
+configure_plymouth() {
+  mkdir -p "$1/etc/dracut.conf.d"
+  echo 'add_dracutmodules+=" plymouth "' > "$1/etc/dracut.conf.d/plymouth.conf"
+}
+
 generate_initramfs() {
 	local _args
 
@@ -750,6 +756,7 @@ generate_initramfs() {
 	{
 		copy_dracut_files "$ROOTFS"
 		copy_autoinstaller_files "$ROOTFS"
+    configure_plymouth
 		chroot "$ROOTFS" env -i /usr/bin/dracut -N --"${INITRAMFS_COMPRESSION}" --add-drivers "ahci" --force-add "vmklive autoinstaller" --omit systemd "/boot/initrd" $KERNELVERSION
 		result="${PIPESTATUS[0]}"
 		[ $result -ne 0 ] && die "Failed to generate the initramfs"
