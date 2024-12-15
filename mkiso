@@ -1343,7 +1343,7 @@ generate_grub_efi_boot
 print_step "Limpando rootfs..."
 cleanup_rootfs
 
-print_step "Genendo image squashfs ($SQUASHFS_COMPRESSION) de rootfs..."
+print_step "Gerando image squashfs ($SQUASHFS_COMPRESSION) de rootfs..."
 generate_squashfs
 
 print_step "Generando imagem ISO ..."
