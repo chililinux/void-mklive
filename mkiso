@@ -753,7 +753,8 @@ configure_plymouth() {
 	result="${PIPESTATUS[0]}"
 	[ $result -ne 0 ] && die "Falha ao configurar tema"
 
-  print_step "Criando wrapper plymouth $1/usr/bin/plymouth-show-log-voidlinux"
+  print_step "Criando wrapper plymouth $1/etc/runit/core-services/04-plymouth-show-log-voidlinux.sh"
+  mkdir -p "$1/etc/runit/core-services"
   cat <<EOF > "$1/etc/runit/core-services/04-plymouth-show-log-voidlinux.sh"
 #!/usr/bin/env bash
 
@@ -786,7 +787,6 @@ generate_initramfs() {
 	{
 		copy_dracut_files "$ROOTFS"
 		copy_autoinstaller_files "$ROOTFS"
-    	configure_plymouth
 		chroot "$ROOTFS" env -i /usr/bin/dracut -N --"${INITRAMFS_COMPRESSION}" --add-drivers "ahci" --force-add "vmklive autoinstaller" --omit systemd "/boot/initrd" $KERNELVERSION
 		result="${PIPESTATUS[0]}"
 		[ $result -ne 0 ] && die "Failed to generate the initramfs"
@@ -1355,6 +1355,8 @@ print_step "Substituir 'CDLABEL=VOID_LIVE' por 'CDLABEL=$VOL_ID' em ./grub/grub_
 for file in ./grub/grub_void.cfg.in ./isolinux/isolinux.cfg.in; do
   sudo sed -i "s/CDLABEL=[^ ]*/CDLABEL=${VOL_ID}/g" "$file"
 done
+
+configure_plymouth
 
 print_step "Gerando imagem initramfs ($INITRAMFS_COMPRESSION)..."
 generate_initramfs
