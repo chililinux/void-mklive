@@ -96,6 +96,7 @@ sh_choose_packages_base() {
 	declare -g REQUIRED_PKGS="base-files libgcc dash coreutils sed tar gawk syslinux grub-i386-efi grub-x86_64-efi memtest86+ squashfs-tools xorriso"
 	declare -g INITRAMFS_PKGS="binutils device-mapper dhclient dracut-network openresolv"
 	declare -g ADDITIONAL_PKGS="dialog gettext curl wget git github-cli pv nano parted"
+	ADDITIONAL_PKGS+=" plymouth"
 	ADDITIONAL_PKGS+=" btop htop"
 	ADDITIONAL_PKGS+=" tree rsync lynx parallel tmate gpm evtest acpi acpid"
 	ADDITIONAL_PKGS+=" xz zstd cryptsetup lvm2 wireless_tools wpa_supplicant socklog-void openntpd"
@@ -743,6 +744,12 @@ copy_include_directories() {
 	done
 }
 
+configure_plymouth() {
+	print_step "Configurando plymouth em: $1/etc/dracut.conf.d/plymouth.conf"
+  mkdir -p "$1/etc/dracut.conf.d"
+  echo 'add_dracutmodules+=" plymouth "' > "$1/etc/dracut.conf.d/plymouth.conf"
+}
+
 generate_initramfs() {
 	local _args
 
@@ -750,6 +757,7 @@ generate_initramfs() {
 	{
 		copy_dracut_files "$ROOTFS"
 		copy_autoinstaller_files "$ROOTFS"
+    configure_plymouth
 		chroot "$ROOTFS" env -i /usr/bin/dracut -N --"${INITRAMFS_COMPRESSION}" --add-drivers "ahci" --force-add "vmklive autoinstaller" --omit systemd "/boot/initrd" $KERNELVERSION
 		result="${PIPESTATUS[0]}"
 		[ $result -ne 0 ] && die "Failed to generate the initramfs"
@@ -1314,11 +1322,11 @@ if [ "${#INCLUDE_DIRS[@]}" -gt 0 ]; then
 	copy_include_directories
 fi
 
-print_step "Substituir iso label VOID_LIVE por $VOL_ID em ./grub/grub_void.cfg.in"
-sudo sed -i "s/VOID_LIVE/${VOL_ID}/g" ./grub/grub_void.cfg.in
+print_step "Substituir 'CDLABEL=VOID_LIVE' por 'CDLABEL=$VOL_ID' em ./grub/grub_void.cfg.in"
+sudo sed -i "s/CDLABEL=[^ ]*/CDLABEL=${VOL_ID}/g" ./grub/grub_void.cfg.in
 
-print_step "Substituir iso label VOID_LIVE por $VOL_ID em ./isolinux/isolinux.cfg.in"
-sudo sed -i "s/VOID_LIVE/${VOL_ID}/g" ./isolinux/isolinux.cfg.in
+print_step "Substituir 'CDLABEL=VOID_LIVE' por 'CDLABEL=$VOL_ID' em ./isolinux/isolinux.cfg.in"
+sudo sed -i "s/CDLABEL=[^ ]*/CDLABEL=${VOL_ID}/g" ./isolinux/isolinux.cfg.in
 
 print_step "Gerando imagem initramfs ($INITRAMFS_COMPRESSION)..."
 generate_initramfs
