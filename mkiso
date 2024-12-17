@@ -790,7 +790,7 @@ touch /var/log/boot.log
 exec dmesg > /var/log/boot.log 2>&1
 EOF
   chmod +x "$ROOTFS/etc/sv/boot-logger/run"
-  ln -sf "$ROOTFS/etc/sv/boot-logger" "$ROOTFS/var/service"
+  ln -sf "$ROOTFS/etc/sv/boot-logger" "$ROOTFS/etc/runit/runsvdir/default/"
 }
 
 configure_service_plymouth_log() {
@@ -802,7 +802,7 @@ configure_service_plymouth_log() {
 exec usr/bin/plymouth-show-log-voidlinux.sh
 EOF
   chmod +x "$ROOTFS/etc/sv/plymouth-log/run"
-  ln -sf "$ROOTFS/etc/sv/plymouth-log" "$ROOTFS/var/service"
+  ln -sf "$ROOTFS/etc/sv/plymouth-log" "$ROOTFS/etc/runit/runsvdir/default/"
 }
 
 configure_service_plymouth_stop() {
@@ -814,7 +814,7 @@ configure_service_plymouth_stop() {
 exec plymouth --quit
 EOF
   chmod +x "$ROOTFS/etc/sv/plymouth-stop/run"
-  ln -sf "$ROOTFS/etc/sv/plymouth-stop" "$ROOTFS/var/service"
+  ln -sf "$ROOTFS/etc/sv/plymouth-stop" "$ROOTFS/etc/runit/runsvdir/default/"
 }
 
 generate_initramfs() {
