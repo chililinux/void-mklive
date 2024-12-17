@@ -780,6 +780,11 @@ EOF
 
 # Torna o script gerado executável
 chmod +x "$ROOTFS/usr/bin/plymouth-show-log-voidlinux.sh"
+
+sed -i \
+  '/\[ -r \/etc\/rc.conf \] && . \/etc\/rc.conf/i \
+  [ -r /usr/bin/plymouth-show-log-voidlinux.sh ] && . /usr/bin/plymouth-show-log-voidlinux.sh' \
+  $ROOTFS/etc/sv/1
 }
 
 configure_service_boot_logger() {
@@ -1415,7 +1420,7 @@ cleanup_rootfs
 print_step "Gerando image squashfs ($SQUASHFS_COMPRESSION) de rootfs..."
 generate_squashfs
 
-print_step "Generando imagem ISO ..."
+print_step "Gerando imagem ISO ..."
 generate_iso_image
 
 hsize=$(du -sh "$OUTPUT_FILE" | awk '{print $1}')
