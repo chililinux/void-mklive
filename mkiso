@@ -748,8 +748,10 @@ configure_plymouth() {
 	print_step "Configurando plymouth em: $ROOTFS/etc/dracut.conf.d/plymouth.conf"
 	mkdir -p "$ROOTFS/etc/dracut.conf.d"
 	echo 'add_dracutmodules+=" plymouth "' > "$ROOTFS/etc/dracut.conf.d/plymouth.conf"
-	print_step "Configurando tema plymouth fade-in"
-	chroot "$ROOTFS" env -i plymouth-set-default-theme fade-in
+	print_step "Configurando tema plymouth"
+	#chroot "$ROOTFS" env -i plymouth-set-default-theme fade-in
+	#chroot "$ROOTFS" env -i plymouth-set-default-theme voidx
+	chroot "$ROOTFS" env -i plymouth-set-default-theme chililinux
 	result="${PIPESTATUS[0]}"
 	[ $result -ne 0 ] && die "Falha ao configurar tema"
 
@@ -786,7 +788,7 @@ configure_service_boot_logger() {
   tee "$ROOTFS/etc/sv/boot-logger/run" > /dev/null << EOF
 #!/bin/sh
 touch /var/log/boot.log
-[ r ./conf ] && . ./conf
+[ -r ./conf ] && . ./conf
 exec dmesg > /var/log/boot.log 2>&1
 EOF
   chmod +x "$ROOTFS/etc/sv/boot-logger/run"
@@ -798,8 +800,8 @@ configure_service_plymouth_log() {
 	mkdir -p "$ROOTFS/etc/sv/plymouth-log"
   tee "$ROOTFS/etc/sv/plymouth-log/run" > /dev/null << EOF
 #!/bin/sh
-[ r ./conf ] && . ./conf
-exec usr/bin/plymouth-show-log-voidlinux.sh
+[ -r ./conf ] && . ./conf
+exec plymouth-show-log-voidlinux.sh
 EOF
   chmod +x "$ROOTFS/etc/sv/plymouth-log/run"
   ln -sf "/etc/sv/plymouth-log" "$ROOTFS/etc/runit/runsvdir/default/"
@@ -810,7 +812,7 @@ configure_service_plymouth_stop() {
 	mkdir -p "$ROOTFS/etc/sv/plymouth-stop"
   tee "$ROOTFS/etc/sv/plymouth-stop/run" > /dev/null << EOF
 #!/bin/sh
-[ r ./conf ] && . ./conf
+[ -r ./conf ] && . ./conf
 exec plymouth --quit
 EOF
   chmod +x "$ROOTFS/etc/sv/plymouth-stop/run"
