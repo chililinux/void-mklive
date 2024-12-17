@@ -753,44 +753,68 @@ configure_plymouth() {
 	result="${PIPESTATUS[0]}"
 	[ $result -ne 0 ] && die "Falha ao configurar tema"
 
-  print_step "Criando wrapper plymouth $1/etc/runit/core-services/plymouth-show-log-voidlinux.sh"
-  mkdir -p "$ROOTFS/etc/runit/core-services"
-  cat <<'EOF' > "$ROOTFS/etc/runit/core-services/plymouth-show-log-voidlinux.sh"
+  print_step "Criando wrapper plymouth $ROOTFS/usr/bin/plymouth-show-log-voidlinux.sh"
+  mkdir -p "$ROOTFS/usr/bin"
+  cat <<'EOF' > "$ROOTFS/usr/bin/plymouth-show-log-voidlinux.sh"
 #!/usr/bin/env bash
 
+file=/var/log/boot.log
 # Exibe uma mensagem inicial usando o Plymouth
 plymouth display-message --text="Booting Void Linux"
-
-# Usamos o arquivo de log /var/log/dmesg.log, que contém mensagens do kernel durante a inicialização
-tail -n2 /var/log/boot.log | while read -r line; do
+demsg -f daemon,user,auth | while read -r line; do
   # Exibe as últimas 50 caracteres da linha usando o Plymouth
-  if ! plymouth display-message --text="${line:0:50}"; then
-    break
-  fi
+  plymouth display-message --text="${line:0:50}"
+  echo "${line:0:50}"
+  sleep 0.2
   if ! plymouth --ping; then
+    echo "Plymouth morreu, saindo..."
     break
   fi
 
 done
 # Exibe uma mensagem de encerramento caso o Plymouth morra
-echo "Plymouth morreu, saindo..."
+plymouth display-message --text="Initialization completed"
 EOF
 
 # Torna o script gerado executável
-chmod +x "$ROOTFS/etc/runit/core-services/plymouth-show-log-voidlinux.sh"
+chmod +x "$ROOTFS/usr/bin/plymouth-show-log-voidlinux.sh"
 }
 
 configure_service_boot_logger() {
-	print_step "Configurando service boot-looger em: $ROOTFS"
+	print_step "Configurando serviço boot-logger em: $ROOTFS/etc/sv/"
 	mkdir -p "$ROOTFS/etc/sv/boot-logger"
   tee "$ROOTFS/etc/sv/boot-logger/run" > /dev/null << EOF
 #!/bin/sh
 touch /var/log/boot.log
-exec dmesg > /var/log/boot.log
+[ r ./conf ] && . ./conf
+exec dmesg > /var/log/boot.log 2>&1
 EOF
-
   chmod +x "$ROOTFS/etc/sv/boot-logger/run"
   ln -sf "$ROOTFS/etc/sv/boot-logger" "$ROOTFS/var/service"
+}
+
+configure_service_plymouth_log() {
+	print_step "Configurando serviço plymouth-log em: $ROOTFS/etc/sv/"
+	mkdir -p "$ROOTFS/etc/sv/plymouth-log"
+  tee "$ROOTFS/etc/sv/plymouth-log/run" > /dev/null << EOF
+#!/bin/sh
+[ r ./conf ] && . ./conf
+exec usr/bin/plymouth-show-log-voidlinux.sh
+EOF
+  chmod +x "$ROOTFS/etc/sv/plymouth-log/run"
+  ln -sf "$ROOTFS/etc/sv/plymouth-log" "$ROOTFS/var/service"
+}
+
+configure_service_plymouth_stop() {
+	print_step "Configurando serviço plymouth-stop em: $ROOTFS/etc/sv"
+	mkdir -p "$ROOTFS/etc/sv/plymouth-stop"
+  tee "$ROOTFS/etc/sv/plymouth-stop/run" > /dev/null << EOF
+#!/bin/sh
+[ r ./conf ] && . ./conf
+exec plymouth --quit
+EOF
+  chmod +x "$ROOTFS/etc/sv/plymouth-stop/run"
+  ln -sf "$ROOTFS/etc/sv/plymouth-stop" "$ROOTFS/var/service"
 }
 
 generate_initramfs() {
@@ -1371,6 +1395,8 @@ done
 
 configure_plymouth
 configure_service_boot_logger
+configure_service_plymouth_log
+configure_service_plymouth_stop
 
 print_step "Gerando imagem initramfs ($INITRAMFS_COMPRESSION)..."
 generate_initramfs
