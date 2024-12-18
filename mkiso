@@ -5,7 +5,7 @@
 #
 # mkiso
 # Created: 2023/09/18 - 09:05
-# Altered: 2024/12/14 - 06:43
+# Altered: 2024/12/17 - 12:43
 #
 # Copyright (c) 2009-2015 Juan Romero Pardines.
 # Copyright (c) 2023-2024 Vilmar Catafesta <vcatafesta@gmail.com>
@@ -61,7 +61,7 @@ shopt -s extglob
 readonly APP="${0##*/}"
 readonly _VERSION_='1.12.14-20241214'
 readonly distro=$(uname -n)
-readonly DEPENDENCIES=(rsync sed cat cp umount losetup grep chroot mkfs.vfat tee)
+readonly DEPENDENCIES=(rsync sed grep cat umount losetup tput chroot mkfs.vfat tee)
 
 # Restaurar os aliases quando o script terminar
 trap "eval \"$OLD_ALIASES\"" EXIT

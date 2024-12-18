@@ -438,13 +438,13 @@
         "type": "soundfilechooser",
         "description": "Which sound to play when the volume is changed",
         "default": "/usr/share/mint-artwork/sounds/volume.oga",
-        "value": "/usr/share/sounds/LinuxMint/stereo/volume.oga"
+        "value": ""
     },
     "volumeSoundEnabled": {
         "type": "switch",
         "description": "Whether to play a sound when the volume is changed",
         "default": false,
-        "value": true
+        "value": false
     },
     "redefine-volume-keybindings": {
         "type": "switch",
@@ -510,7 +510,7 @@
     "volume": {
         "type": "generic",
         "default": "50%",
-        "value": "100%"
+        "value": "0%"
     },
     "mic-level": {
         "type": "generic",
