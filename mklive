@@ -5,7 +5,7 @@
 #
 # mkiso
 # Created: 2023/09/18 - 09:05
-# Altered: 2024/12/14 - 06:43
+# Altered: 2024/12/17 - 12:43
 #
 # Copyright (c) 2009-2015 Juan Romero Pardines.
 # Copyright (c) 2023-2024 Vilmar Catafesta <vcatafesta@gmail.com>
@@ -61,7 +61,7 @@ shopt -s extglob
 readonly APP="${0##*/}"
 readonly _VERSION_='1.12.14-20241214'
 readonly distro=$(uname -n)
-readonly DEPENDENCIES=(rsync sed cat cp umount losetup grep chroot mkfs.vfat tee)
+readonly DEPENDENCIES=(rsync sed grep cat umount losetup tput chroot mkfs.vfat tee)
 
 # Restaurar os aliases quando o script terminar
 trap "eval \"$OLD_ALIASES\"" EXIT
@@ -745,38 +745,83 @@ copy_include_directories() {
 }
 
 configure_plymouth() {
-	print_step "Configurando plymouth em: $1/etc/dracut.conf.d/plymouth.conf"
-	mkdir -p "$1/etc/dracut.conf.d"
-	echo 'add_dracutmodules+=" plymouth "' > "$1/etc/dracut.conf.d/plymouth.conf"
-	print_step "Configurando tema plymouth fade-in"
-	chroot "$ROOTFS" env -i plymouth-set-default-theme fade-in
+	print_step "Configurando plymouth em: $ROOTFS/etc/dracut.conf.d/plymouth.conf"
+	mkdir -p "$ROOTFS/etc/dracut.conf.d"
+	echo 'add_dracutmodules+=" plymouth "' > "$ROOTFS/etc/dracut.conf.d/plymouth.conf"
+	print_step "Configurando tema plymouth"
+	#chroot "$ROOTFS" env -i plymouth-set-default-theme fade-in
+	#chroot "$ROOTFS" env -i plymouth-set-default-theme voidx
+	chroot "$ROOTFS" env -i plymouth-set-default-theme chililinux
 	result="${PIPESTATUS[0]}"
 	[ $result -ne 0 ] && die "Falha ao configurar tema"
 
-  print_step "Criando wrapper plymouth $1/usr/bin/plymouth-show-log-voidlinux"
-  cat <<EOF > "$1/etc/runit/core-services/04-plymouth-show-log-voidlinux.sh"
+  print_step "Criando wrapper plymouth $ROOTFS/usr/bin/plymouth-show-log-voidlinux.sh"
+  mkdir -p "$ROOTFS/usr/bin"
+  cat <<'EOF' > "$ROOTFS/usr/bin/plymouth-show-log-voidlinux.sh"
 #!/usr/bin/env bash
 
+file=/var/log/boot.log
 # Exibe uma mensagem inicial usando o Plymouth
 plymouth display-message --text="Booting Void Linux"
-
-# Usamos o arquivo de log /var/log/dmesg.log, que contém mensagens do kernel durante a inicialização
-tail -f /var/log/dmesg.log | while read -r line; do
+demsg -f daemon,user,auth | while read -r line; do
   # Exibe as últimas 50 caracteres da linha usando o Plymouth
-  plymouth display-message --text="$(echo "\$line" | cut -c -50)"
-
-  # Verifica se houve algum erro ao exibir a mensagem no Plymouth
-  if [ \$? -ne 0 ]; then
+  plymouth display-message --text="${line:0:50}"
+  echo "${line:0:50}"
+  sleep 0.2
+  if ! plymouth --ping; then
+    echo "Plymouth morreu, saindo..."
     break
   fi
-done
 
+done
 # Exibe uma mensagem de encerramento caso o Plymouth morra
-echo "Plymouth morreu, saindo..."
+plymouth display-message --text="Initialization completed"
 EOF
 
 # Torna o script gerado executável
-chmod +x "$1/etc/runit/core-services/04-plymouth-show-log-voidlinux.sh"
+chmod +x "$ROOTFS/usr/bin/plymouth-show-log-voidlinux.sh"
+
+sed -i \
+  '/\[ -r \/etc\/rc.conf \] && . \/etc\/rc.conf/i \
+  [ -r /usr/bin/plymouth-show-log-voidlinux.sh ] && . /usr/bin/plymouth-show-log-voidlinux.sh' \
+  $ROOTFS/etc/sv/1
+}
+
+configure_service_boot_logger() {
+	print_step "Configurando serviço boot-logger em: $ROOTFS/etc/sv/"
+	mkdir -p "$ROOTFS/etc/sv/boot-logger"
+  tee "$ROOTFS/etc/sv/boot-logger/run" > /dev/null << EOF
+#!/bin/sh
+touch /var/log/boot.log
+[ -r ./conf ] && . ./conf
+exec dmesg > /var/log/boot.log 2>&1
+EOF
+  chmod +x "$ROOTFS/etc/sv/boot-logger/run"
+  ln -sf "/etc/sv/boot-logger" "$ROOTFS/etc/runit/runsvdir/default/"
+}
+
+configure_service_plymouth_log() {
+	print_step "Configurando serviço plymouth-log em: $ROOTFS/etc/sv/"
+	mkdir -p "$ROOTFS/etc/sv/plymouth-log"
+  tee "$ROOTFS/etc/sv/plymouth-log/run" > /dev/null << EOF
+#!/bin/sh
+[ -r ./conf ] && . ./conf
+exec plymouth-show-log-voidlinux.sh
+EOF
+  chmod +x "$ROOTFS/etc/sv/plymouth-log/run"
+  ln -sf "/etc/sv/plymouth-log" "$ROOTFS/etc/runit/runsvdir/default/"
+}
+
+configure_service_plymouth_stop() {
+	print_step "Configurando serviço plymouth-stop em: $ROOTFS/etc/sv"
+	mkdir -p "$ROOTFS/etc/sv/plymouth-stop"
+  tee "$ROOTFS/etc/sv/plymouth-stop/run" > /dev/null << EOF
+#!/bin/sh
+[ -r ./conf ] && . ./conf
+exec plymouth --quit
+EOF
+  chmod +x "$ROOTFS/etc/sv/plymouth-stop/run"
+  ln -sf "/etc/sv/plymouth-stop" "$ROOTFS/etc/runit/runsvdir/default/"
 }
 
 generate_initramfs() {
@@ -786,7 +831,6 @@ generate_initramfs() {
 	{
 		copy_dracut_files "$ROOTFS"
 		copy_autoinstaller_files "$ROOTFS"
-    	configure_plymouth
 		chroot "$ROOTFS" env -i /usr/bin/dracut -N --"${INITRAMFS_COMPRESSION}" --add-drivers "ahci" --force-add "vmklive autoinstaller" --omit systemd "/boot/initrd" $KERNELVERSION
 		result="${PIPESTATUS[0]}"
 		[ $result -ne 0 ] && die "Failed to generate the initramfs"
@@ -1356,6 +1400,11 @@ for file in ./grub/grub_void.cfg.in ./isolinux/isolinux.cfg.in; do
   sudo sed -i "s/CDLABEL=[^ ]*/CDLABEL=${VOL_ID}/g" "$file"
 done
 
+configure_plymouth
+configure_service_boot_logger
+configure_service_plymouth_log
+configure_service_plymouth_stop
+
 print_step "Gerando imagem initramfs ($INITRAMFS_COMPRESSION)..."
 generate_initramfs
 
@@ -1371,7 +1420,7 @@ cleanup_rootfs
 print_step "Gerando image squashfs ($SQUASHFS_COMPRESSION) de rootfs..."
 generate_squashfs
 
-print_step "Generando imagem ISO ..."
+print_step "Gerando imagem ISO ..."
 generate_iso_image
 
 hsize=$(du -sh "$OUTPUT_FILE" | awk '{print $1}')
