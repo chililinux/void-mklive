@@ -750,8 +750,8 @@ configure_plymouth() {
 	echo 'add_dracutmodules+=" plymouth "' > "$ROOTFS/etc/dracut.conf.d/plymouth.conf"
 	print_step "Configurando tema plymouth"
 	#chroot "$ROOTFS" env -i plymouth-set-default-theme fade-in
-	#chroot "$ROOTFS" env -i plymouth-set-default-theme voidx
-	chroot "$ROOTFS" env -i plymouth-set-default-theme chililinux
+	#chroot "$ROOTFS" env -i plymouth-set-default-theme chililinux
+	chroot "$ROOTFS" env -i plymouth-set-default-theme voidx
 	result="${PIPESTATUS[0]}"
 	[ $result -ne 0 ] && die "Falha ao configurar tema"
 
