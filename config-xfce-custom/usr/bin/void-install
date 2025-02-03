@@ -5,7 +5,7 @@
 #  void-install
 #  Created: 2022/12/24
 #  Altered: 2024/03/11
-#  Updated: sáb 18 jan 2025 23:05:24 -04
+#  Updated: dom 02 fev 2025 18:43:58 -04
 #
 #  Copyright (c) 2022-2025, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -45,7 +45,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='2.15.01-20250117'
+readonly _VERSION_='2.25.02.02-20250202'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -153,7 +153,7 @@ sh_choose_packages() {
 		  _EXTRAS+=' chili-void-tools'
 		  _EXTRAS+=' chili-nano-config'
 		  _EXTRAS+=' chili-utils'
-      #_EXTRAS+=' chili-void-xfce-skel'
+		  _EXTRAS+=' chili-void-tools'
     fi
 		## end packages
 	else
@@ -482,12 +482,15 @@ sh_setUser() {
 	AsUser[cgroups]=${AsUser[cgroups]:-"wheel,audio,video,floppy,cdrom,optical,kvm,xbuilder"}
 }
 
+# Testa se o terminal suporta caracteres gráficos estendidos
 sh_setAsciiLines() {
-	if [[ "$LANG" =~ 'UTF-8' ]]; then
-		export NCURSES_NO_UTF8_ACS=0
-	else
-		export NCURSES_NO_UTF8_ACS=1
-	fi
+  #Isso força o dialog a usar caracteres ASCII básicos para as bordas.
+  #if [[ "$LANG" =~ 'UTF-8' ]]; then
+  if [[ "$(printf '\u250C')" =~ "┌" ]]; then
+    export NCURSES_NO_UTF8_ACS=1  # Terminal suporta ACS
+  else
+    export NCURSES_NO_UTF8_ACS=0  # Terminal NÃO suporta ACS
+  fi
 }
 
 sh_checkRoot() {
@@ -1920,8 +1923,11 @@ sh_xfce4minimal() {
 				xfce4-wavelan-plugin
 				xfce4-xkb-plugin
 				plank
-				chili-void-xfce-skel
 			 )
+      if sh_checkRepo 'https://chililinux.com/void/current'; then
+        apkgs+=(chili-xfce-config)
+        #apkgs+=(chili-void-xfce-skel)
+      fi
 	fi
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Xfce4 ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C ${XBPS_INSTALL_UNPACK_ONLY} ${apkgs[*]}"
 }
@@ -3213,13 +3219,14 @@ sh_choosewm() {
 		return
 		;;
 	esac
-	#LCUSTOM=false
 	HYPRLAND=$false
 	if conf "=== ${cmsg_Wm[LC_DEFAULT]^^} ===" \
 			"\n${BOLD}${WHITE}$(gettext "Uma instalação customizada irá instalar pacotes extras e também")" \
 			"\n$(gettext "fazer diversas configurações, evitando faze-las manualmente posteriormente.")\n" \
 			"\n${BOLD}${RED}$(gettext "Customizar a instalação?")\n\n"; then
 		LCUSTOM=true
+	else
+		LCUSTOM=false
 	fi
 	_WINDOWMANAGER=($(strtoarray "$wm"))
 	if grep -qi hyprland <<< "${_WINDOWMANAGER[@]}"; then
@@ -3343,11 +3350,17 @@ display_config() {
                   \n$(padr "${cmsg_BootLoader[$LC_DEFAULT]} (${_DISKTABLE}) :" 30 ' ') \Zb\Z0${AConfDisk[_BOOTLOADER]} | $(sh_splitarray "${AARRAY_DSK_DEVICES[$_BOOTLOADER]}" 2) | $(sh_splitarray "${AARRAY_DSK_DEVICES[$_BOOTLOADER]}" 4)${RESET}\
                                           \n$(padr "Detect SO's (os-prober) :" 30 ' ') \Zb\Z0$(sh_getyes "${AConfDisk[_OSPROBER]}")${RESET}\
                                      \n$(padr "${cmsg_Extra11[$LC_DEFAULT]} :" 30 ' ') \Zb\Z0"${_WINDOWMANAGER[*]}"${RESET}\
+                                                     \n$(padr "Customizacao :" 30 ' ') \Zb\Z0$(sh_getTrueFalse "$LCUSTOM")${RESET}\
                                                               \n$(padr "Fde :" 30 ' ') \Zb\Z0$(sh_getinfoFde "$LFDE")${RESET}\
                                                               \n$(padr "Lvm :" 30 ' ') \Zb\Z0$(sh_getinfoFde "$LVM")${RESET}\
                                             \n$(padr "FileSystem/Mountpoint :" 30 ' ') \Zb\Z7↓↓↓\
                                                        \n\Zb\Z4$(sh_getmntpoint)${RESET}${RESET}"
 }
+
+sh_getTrueFalse() {
+  local var="$1"
+  [[ "$var" == 'true' ]] && echo 'Sim' || echo 'Nao'
+ }
 
 sh_getinfoFde() {
 	local lfde="$1"
@@ -3700,13 +3713,12 @@ sh_install() {
 	local end_datetime
 	local akernel=(linux dbus)
 	local afirmware=(wifi-firmware)
+	local abase=(zstd xz cryptsetup lvm2 wireless_tools wpa_supplicant)
+	local agrub=(grub os-prober grub-i386-efi grub-x86_64-efi grub-utils)
 
 	if $LCUSTOM; then
-	local abase=(zstd xz cryptsetup lvm2 wireless_tools wpa_supplicant socklog-void openntpd)
-	local agrub=(grub os-prober grub-i386-efi grub-x86_64-efi grub-utils grub-terminus grub-btrfs-runit)
-	else
-	local abase=(cryptsetup lvm2 wireless_tools wpa_supplicant)
-	local agrub=(grub os-prober grub-i386-efi grub-x86_64-efi grub-utils)
+	  abase+=(socklog-void openntpd)
+	  agrub+=(grub-terminus grub-btrfs-runit)
 	fi
 
 	ncounter=0
@@ -3772,7 +3784,7 @@ sh_install() {
       fi
    		sh_update_bashrc
     	sh_grubInstall
- 			sh_copy_scripts
+ 			#sh_copy_scripts
 	   	sh_make_fstab
     	sh_make_user
     	sh_update_hostname
